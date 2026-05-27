@@ -1,175 +1,163 @@
-import asyncio
-import logging
-from aiogram import Bot, Dispatcher, types, F
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.filters import Command, StateFilter
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage
+import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# ========== КОНФИГУРАЦИЯ ==========
-BOT_TOKEN = "8898263139:AAFBY3MoW4NKvOGBJgtWKBus1e8aKuFvyu4"   # Твой токен
-ADMIN_ID = 7738397444                    # ⚠️ СВОЙ TELEGRAM ID (число)
-TRC20_WALLET = "TSZ35HrnGnX631MPwiScxmPzvWb5QpAJUb"      # ⚠️ СВОЙ TRC20 КОШЕЛЕК
+BOT_TOKEN = "8898263139:AAFBY3MoW4NKvOGBJgtWKBus1e8aKuFvyu4"
+ADMIN_ID = 7738397444
+TRC20_WALLET = "TSZ35HrnGnX631MPwiScxmPzvWb5QpAJUb"
 
-# Прайс-лист (название: цена в $)
 PRODUCTS = {
-    "Сносер TG/INST": 30,
-    "DDOS СОФТ": 40,
-    "Строки MM (10шт)": 70,
-    "MAX (с панели)": 4,
-    "MAX (Взросляк 18+)": 6,
-    "Подпись ГК (Билайн,Т2)": 4,
-    "Панель MAX под ключ": 90,
-    "Мануал вбив банки/МФО с наставником": 200,
-    "СС FULL GEO": 14,
-    "Cпамер MAX": 20,
-    "Брутер Тинь/Сбер/ВТБ": 150
+    "snos": {"name": "Сносер TG/INST", "price": 30},
+    "ddos": {"name": "DDOS СОФТ", "price": 40},
+    "stroki": {"name": "Строки MM (10шт)", "price": 70},
+    "max1": {"name": "MAX (с панели)", "price": 4},
+    "max2": {"name": "MAX (Взросляк 18+)", "price": 6},
+    "podpis": {"name": "Подпись ГК (Билайн,Т2)", "price": 4},
+    "panel": {"name": "Панель MAX под ключ", "price": 90},
+    "manual": {"name": "Мануал вбив банки/МФО с наставником", "price": 200},
+    "cc": {"name": "СС FULL GEO", "price": 14},
+    "spamer": {"name": "Cпамер MAX", "price": 20},
+    "bruter": {"name": "Брутер Тинь/Сбер/ВТБ", "price": 150}
 }
 
-# Твои услуги
 SERVICE_TEXT = {
-    "Сносер TG/INST": "✅ Ваш доступ: логин: user123, пароль: pass456\nСайт: https://example.com",
-    "DDOS СОФТ": "✅ Ссылка на софт: https://disk.yandex.ru/...",
-    "Строки MM (10шт)": "✅ Ваши строки:\n1. ...\n2. ...",
-    "MAX (с панели)": "✅ Доступ к панели: ip:8080, логин: admin, пароль: qwerty",
-    "MAX (Взросляк 18+)": "✅ Ссылка на приват канал: https://t.me/+...",
-    "Подпись ГК (Билайн,Т2)": "✅ Инструкция и файл подписи: ...",
-    "Панель MAX под ключ": "✅ Готовая панель: доступ по ssh root@...",
-    "Мануал вбив банки/МФО с наставником": "✅ Мануал (PDF) и контакт наставника: @mentor",
-    "СС FULL GEO": "✅ СС список: приложен файлом.",
-    "Cпамер MAX": "✅ Софт спамер + инструкция.",
-    "Брутер Тинь/Сбер/ВТБ": "✅ Брутер + базы в комплекте."
+    "snos": "✅ Сносер TG/INST активирован!\nЛогин: your_login\nПароль: your_password",
+    "ddos": "✅ DDOS СОФТ:\nСсылка: https://ссылка_на_софт",
+    "stroki": "✅ Строки MM:\nВаши строки здесь",
+    "max1": "✅ MAX (с панели):\nДоступ выдан",
+    "max2": "✅ MAX 18+:\nДоступ выдан",
+    "podpis": "✅ Подпись ГК:\nФайл готов",
+    "panel": "✅ Панель MAX под ключ:\nДоступ выдан",
+    "manual": "✅ Мануал:\nСсылка и наставник",
+    "cc": "✅ CC FULL GEO:\nСписок готов",
+    "spamer": "✅ Спамер MAX:\nСофт выдан",
+    "bruter": "✅ Брутер:\nСофт + базы выданы"
 }
 
 orders = {}
-logging.basicConfig(level=logging.INFO)
-storage = MemoryStorage()
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(storage=storage)
+bot = telebot.TeleBot(BOT_TOKEN)
 
-# ========== FSM ==========
-class OrderState(StatesGroup):
-    waiting_for_receipt = State()
-
-# ========== КЛАВИАТУРЫ ==========
 def main_menu():
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[])
-    for name in PRODUCTS.keys():
-        keyboard.inline_keyboard.append([InlineKeyboardButton(text=f"{name} - ${PRODUCTS[name]}", callback_data=f"buy_{name}")])
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        InlineKeyboardButton("🛍 КАТАЛОГ", callback_data="catalog"),
+        InlineKeyboardButton("ℹ️ ИНФО", callback_data="info"),
+        InlineKeyboardButton("❓ ПОМОЩЬ", callback_data="help")
+    )
+    return keyboard
+
+def catalog_menu():
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    for key, product in PRODUCTS.items():
+        btn = InlineKeyboardButton(f"{product['name']} - ${product['price']}", callback_data=f"buy_{key}")
+        keyboard.add(btn)
+    keyboard.add(InlineKeyboardButton("◀️ НАЗАД", callback_data="back"))
     return keyboard
 
 def payment_keyboard():
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✅ Я оплатил", callback_data="paid")],
-        [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel")]
-    ])
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        InlineKeyboardButton("✅ Я ОПЛАТИЛ", callback_data="paid"),
+        InlineKeyboardButton("❌ ОТМЕНА", callback_data="cancel")
+    )
     return keyboard
 
-# ========== ХЕНДЛЕРЫ ==========
-@dp.message(Command("start"))
-async def start_cmd(message: types.Message):
-    await message.answer("🛍 Добро пожаловать в магазин!\nВыберите товар из списка:", reply_markup=main_menu())
+def admin_keyboard(user_id):
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard.add(
+        InlineKeyboardButton("✅ ПОДТВЕРДИТЬ", callback_data=f"approve_{user_id}"),
+        InlineKeyboardButton("❌ ОТКЛОНИТЬ", callback_data=f"reject_{user_id}")
+    )
+    return keyboard
 
-@dp.callback_query(F.data.startswith("buy_"))
-async def process_buy(callback: types.CallbackQuery):
-    product_name = callback.data[4:]
-    price = PRODUCTS[product_name]
-    user_id = callback.from_user.id
+@bot.message_handler(commands=['start'])
+def start_cmd(message):
+    bot.send_message(message.chat.id, "🖤 ДОБРО ПОЖАЛОВАТЬ!\nНажми КАТАЛОГ", reply_markup=main_menu())
 
-    orders[user_id] = {
-        'product': product_name,
-        'price': price,
-        'status': 'waiting_payment'
-    }
+@bot.callback_query_handler(func=lambda call: call.data == "catalog")
+def catalog_cmd(call):
+    bot.edit_message_text("🛍 ВЫБЕРИ ТОВАР:", call.message.chat.id, call.message.message_id, reply_markup=catalog_menu())
 
-    text = f"""💎 Товар: {product_name}
-💰 Сумма: ${price} (TRC20)
+@bot.callback_query_handler(func=lambda call: call.data == "info")
+def info_cmd(call):
+    bot.edit_message_text("👨‍💻 Админ: @StealShoper", call.message.chat.id, call.message.message_id, reply_markup=main_menu())
 
-📤 Переведите ровно {price} USDT (TRC20) на адрес:
-`{TRC20_WALLET}`
+@bot.callback_query_handler(func=lambda call: call.data == "help")
+def help_cmd(call):
+    bot.edit_message_text("❓ Проблемы: @StealShoper", call.message.chat.id, call.message.message_id, reply_markup=main_menu())
 
-❗️ После оплаты нажмите кнопку «✅ Я оплатил» и отправьте чек (скриншот перевода).
-"""
-    await callback.message.answer(text, parse_mode="Markdown", reply_markup=payment_keyboard())
-    await callback.answer()
+@bot.callback_query_handler(func=lambda call: call.data == "back")
+def back_cmd(call):
+    bot.edit_message_text("🖤 ГЛАВНОЕ МЕНЮ:", call.message.chat.id, call.message.message_id, reply_markup=main_menu())
 
-@dp.callback_query(F.data == "paid")
-async def paid_click(callback: types.CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
-    if user_id not in orders or orders[user_id]['status'] != 'waiting_payment':
-        await callback.message.answer("❌ У вас нет активного заказа или вы уже отправили чек.")
-        await callback.answer()
+@bot.callback_query_handler(func=lambda call: call.data.startswith("buy_"))
+def buy_cmd(call):
+    key = call.data[4:]
+    if key not in PRODUCTS:
+        bot.answer_callback_query(call.id, "Ошибка")
         return
+    p = PRODUCTS[key]
+    uid = call.from_user.id
+    orders[uid] = {'key': key, 'name': p['name'], 'price': p['price'], 'status': 'waiting'}
+    text = f"💎 {p['name']}\n💰 ${p['price']} USDT\n📤 Адрес: `{TRC20_WALLET}`"
+    bot.edit_message_text(text, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=payment_keyboard())
+    bot.answer_callback_query(call.id)
 
-    await callback.message.answer("📎 Пожалуйста, отправьте скриншот/фото чека об оплате.")
-    await state.set_state(OrderState.waiting_for_receipt)
-    await callback.answer()
-
-@dp.message(OrderState.waiting_for_receipt, F.photo)
-async def handle_receipt_photo(message: types.Message, state: FSMContext):
-    user_id = message.from_user.id
-    if user_id not in orders:
-        await message.answer("❌ Заказ не найден. Начните заново /start")
-        await state.clear()
+@bot.callback_query_handler(func=lambda call: call.data == "paid")
+def paid_cmd(call):
+    uid = call.from_user.id
+    if uid not in orders:
+        bot.send_message(uid, "❌ Нет заказа")
+        bot.answer_callback_query(call.id)
         return
+    orders[uid]['status'] = 'waiting_receipt'
+    bot.send_message(uid, "📎 Отправь скриншот чека")
+    bot.answer_callback_query(call.id)
 
-    photo = message.photo[-1]
-    file_id = photo.file_id
-    product = orders[user_id]['product']
-    price = orders[user_id]['price']
+@bot.callback_query_handler(func=lambda call: call.data == "cancel")
+def cancel_cmd(call):
+    uid = call.from_user.id
+    if uid in orders:
+        del orders[uid]
+    bot.send_message(uid, "❌ Отменено", reply_markup=main_menu())
+    bot.answer_callback_query(call.id)
 
-    admin_text = f"📩 **Новый чек на проверку**\n👤 Пользователь: {message.from_user.full_name} (@{message.from_user.username})\n🆔 ID: {user_id}\n💎 Товар: {product}\n💰 Сумма: ${price}\n\n✅ Подтвердить / ❌ Отклонить"
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="✅ Подтвердить", callback_data=f"approve_{user_id}"),
-         InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{user_id}")]
-    ])
-    await bot.send_photo(ADMIN_ID, photo, caption=admin_text, parse_mode="Markdown", reply_markup=keyboard)
-
-    await message.answer("✅ Чек отправлен администратору. Ожидайте подтверждения (обычно 1-5 минут).")
-    await state.clear()
-
-@dp.message(OrderState.waiting_for_receipt)
-async def wrong_receipt(message: types.Message):
-    await message.answer("❌ Пожалуйста, отправьте **фото или скриншот** чека об оплате.")
-
-@dp.callback_query(F.data.startswith("approve_"))
-async def approve_payment(callback: types.CallbackQuery):
-    user_id = int(callback.data.split("_")[1])
-    if user_id not in orders:
-        await callback.message.answer("⚠️ Заказ уже неактивен.")
-        await callback.answer()
+@bot.message_handler(content_types=['photo'])
+def handle_photo(msg):
+    uid = msg.from_user.id
+    if uid not in orders or orders[uid]['status'] != 'waiting_receipt':
+        bot.reply_to(msg, "❌ Нет заказа")
         return
+    p = orders[uid]
+    cap = f"📩 ЧЕК\n👤 {msg.from_user.full_name}\n🆔 {uid}\n💎 {p['name']}\n💰 ${p['price']}"
+    bot.send_photo(ADMIN_ID, msg.photo[-1].file_id, cap, reply_markup=admin_keyboard(uid))
+    bot.reply_to(msg, "✅ Отправлено!")
+    orders[uid]['status'] = 'waiting_confirm'
 
-    product = orders[user_id]['product']
-    service_info = SERVICE_TEXT.get(product, "✅ Услуга активирована. Спасибо за покупку!")
+@bot.callback_query_handler(func=lambda call: call.data.startswith("approve_"))
+def approve(call):
+    if call.from_user.id != ADMIN_ID:
+        bot.answer_callback_query(call.id, "❌ Не админ")
+        return
+    uid = int(call.data.split("_")[1])
+    if uid not in orders:
+        bot.answer_callback_query(call.id, "⚠️ Нет заказа")
+        return
+    key = orders[uid]['key']
+    text = SERVICE_TEXT.get(key, "✅ Активировано!")
+    bot.send_message(uid, f"✅ ПЛАТЕЖ ПОДТВЕРЖДЕН!\n\n{text}")
+    del orders[uid]
+    bot.answer_callback_query(call.id, "✅ Готово")
 
-    await bot.send_message(user_id, f"✅ **Ваш платеж подтвержден!**\n\n{service_info}")
+@bot.callback_query_handler(func=lambda call: call.data.startswith("reject_"))
+def reject(call):
+    if call.from_user.id != ADMIN_ID:
+        bot.answer_callback_query(call.id, "❌ Не админ")
+        return
+    uid = int(call.data.split("_")[1])
+    if uid in orders:
+        bot.send_message(uid, "❌ ЧЕК ОТКЛОНЕН\nПиши @StealShoper")
+        del orders[uid]
+    bot.answer_callback_query(call.id, "❌ Отклонено")
 
-    await callback.message.edit_caption(caption=f"✅ Платеж ПОДТВЕРЖДЕН. Пользователю {user_id} выдано.\n{callback.message.caption}")
-    del orders[user_id]
-    await callback.answer("Подтверждено, услуга отправлена.")
-
-@dp.callback_query(F.data.startswith("reject_"))
-async def reject_payment(callback: types.CallbackQuery):
-    user_id = int(callback.data.split("_")[1])
-    if user_id in orders:
-        await bot.send_message(user_id, "❌ Ваш чек **отклонен** администратором. Возможно, неверная сумма, скриншот или адрес.\nПовторите оплату через /start")
-        del orders[user_id]
-
-    await callback.message.edit_caption(caption=f"❌ Платеж ОТКЛОНЕН.\n{callback.message.caption}")
-    await callback.answer("Отклонено, пользователь уведомлен.")
-
-@dp.callback_query(F.data == "cancel")
-async def cancel_order(callback: types.CallbackQuery):
-    user_id = callback.from_user.id
-    if user_id in orders:
-        del orders[user_id]
-    await callback.message.answer("❌ Заказ отменен. Возврат в меню.", reply_markup=main_menu())
-    await callback.answer()
-
-async def main():
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+print("🤖 БОТ ЗАПУЩЕН!")
+bot.infinity_polling()
