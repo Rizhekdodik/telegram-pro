@@ -9,8 +9,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 # ========== КОНФИГУРАЦИЯ ==========
 BOT_TOKEN = "8898263139:AAFBY3MoW4NKvOGBJgtWKBus1e8aKuFvyu4"   # Твой токен
-ADMIN_ID = 123456789                    # ⚠️ СВОЙ TELEGRAM ID (число)
-TRC20_WALLET = "TXxxxxxxxxxxxxxxx"      # ⚠️ СВОЙ TRC20 КОШЕЛЕК
+ADMIN_ID = 7738397444                    # ⚠️ СВОЙ TELEGRAM ID (число)
+TRC20_WALLET = "TSZ35HrnGnX631MPwiScxmPzvWb5QpAJUb"      # ⚠️ СВОЙ TRC20 КОШЕЛЕК
 
 # Прайс-лист (название: цена в $)
 PRODUCTS = {
