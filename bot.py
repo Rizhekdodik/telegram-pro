@@ -7,7 +7,7 @@ import requests
 import json
 
 # ========== КОНФИГУРАЦИЯ ==========
-BOT_TOKEN = "8996166045:AAEK0XqPv00eC91gFhcMvYcWZlgsGupOXVM"  # НОВЫЙ ТОКЕН
+BOT_TOKEN = "8996166045:AAEK0XqPv00eC91gFhcMvYcWZlgsGupOXVM"
 ADMIN_ID = 7738397444
 TRC20_WALLET = "TSZ35HrnGnX631MPwiScxmPzvWb5QpAJUb"
 
@@ -20,7 +20,7 @@ CRYPTO_PAY_API = "https://pay.crypt.bot/api"
 PRODUCTS = {
     "snos": {"name": "Сносер TG/INST", "price": 30},
     "ddos": {"name": "DDOS СОФТ", "price": 40},
-    "stroki": {"name": "Строки MM (10шт)", "price": 7},
+    "stroki": {"name": "Строки MM (10шт)", "price": 7},        # НОВАЯ ЦЕНА: 7$
     "max1": {"name": "MAX (с панели)", "price": 4},
     "max2": {"name": "MAX (Взросляк 18+)", "price": 6},
     "podpis": {"name": "Подпись ГК (Билайн,Т2)", "price": 4},
@@ -28,7 +28,7 @@ PRODUCTS = {
     "manual": {"name": "Мануал вбив банки/МФО с наставником", "price": 200},
     "cc": {"name": "СС FULL GEO", "price": 14},
     "spamer": {"name": "Cпамер MAX", "price": 20},
-    "bruter": {"name": "Брутер Тинь", "price": 150}
+    "bruter": {"name": "Брутер Тинь", "price": 150}    # Цена: 150$
 }
 
 SERVICE_TEXT = {
