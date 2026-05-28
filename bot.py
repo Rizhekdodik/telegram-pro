@@ -7,7 +7,7 @@ import requests
 import json
 
 # ========== КОНФИГУРАЦИЯ ==========
-BOT_TOKEN = "8898263139:AAFBY3MoW4NKvOGBJgtWKBus1e8aKuFvyu4"
+BOT_TOKEN = "8996166045:AAEK0XqPv00eC91gFhcMvYcWZlgsGupOXVM"  # НОВЫЙ ТОКЕН
 ADMIN_ID = 7738397444
 TRC20_WALLET = "TSZ35HrnGnX631MPwiScxmPzvWb5QpAJUb"
 
@@ -109,23 +109,18 @@ def check_payments_background():
                     status = check_invoice_status(order['invoice_id'])
                     
                     if status == "paid":
-                        # Оплата получена! Выдаем товар
                         key = order['key']
                         service_info = SERVICE_TEXT.get(key, "✅ Услуга активирована!")
                         bot.send_message(uid, f"✅ **ПЛАТЕЖ ПОДТВЕРЖДЕН!**\n\n{service_info}")
-                        
-                        # Уведомляем админа
                         bot.send_message(ADMIN_ID, f"✅ Оплата получена!\nПользователь: {uid}\nТовар: {order['name']}\nСумма: ${order['price']}")
-                        
                         del orders[uid]
                     elif status == "expired":
-                        # Счет просрочен
                         bot.send_message(uid, "❌ Время оплаты истекло. Повторите заказ /start")
                         del orders[uid]
         except Exception as e:
             print(f"Ошибка в фоновой проверке: {e}")
         
-        time.sleep(10)  # Проверяем каждые 10 секунд
+        time.sleep(10)
 
 # ========== КЛАВИАТУРЫ ==========
 def main_menu():
@@ -221,7 +216,6 @@ def buy_cmd(call):
     p = PRODUCTS[key]
     uid = call.from_user.id
     
-    # Создаем счет в Crypto Pay
     invoice = create_crypto_invoice(p['price'])
     
     if invoice:
@@ -246,7 +240,6 @@ def buy_cmd(call):
         
         bot.edit_message_text(text, call.message.chat.id, call.message.message_id, parse_mode="Markdown", reply_markup=crypto_payment_keyboard(invoice['pay_url']))
     else:
-        # Если не удалось создать счет, предлагаем оплату вручную
         orders[uid] = {
             'key': key,
             'name': p['name'],
@@ -331,7 +324,6 @@ def reject(call):
 
 # ========== ЗАПУСК ==========
 if __name__ == "__main__":
-    # Запускаем фоновую проверку оплат
     payment_thread = threading.Thread(target=check_payments_background, daemon=True)
     payment_thread.start()
     
